@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>roulette</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/blazecss/3.2.0/blaze.min.css" />
+    <style type="text/css">
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(3600deg);
+    }
+}
+
+@-webkit-keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(3600deg);
+    }
+}
+
+@-moz-keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(3600deg);
+    }
+}
+
+#canvas.clicked {
+    animation: spin 6s ease 0s forwards;
+    -webkit-animation: spin 6s ease 0s forwards;
+    -moz-animation: spin 6s ease 0s forwards;
+}
+
+canvas {
+    width: 100%;
+}
+
+    </style>
+</head>
+<body>
+<div id="container" class="o-container o-container--xsmall@medium">
+    <table style="margin-bottom: 1rem;">
+        <tbody id="tbody">
+<!--        <tr>
+                <td class="c-field c-field- -choice"><input type="checkbox" checked="checked" /></td>
+                <td><input type="text" value="value" class="c-field" /></td>
+            </tr> -->
+        </tbody>
+    </table>
+
+    <canvas id="arrow" width="600" height="15" style="display: block;"></canvas>
+    <canvas id="canvas" width="600" height="600" style="display: block;"></canvas>
+
+    <span class="c-input-group c-button--block" style="margin-top: 1rem;">
+        <button id="btnSpin" class="c-button c-button--block c-button--info">Spin</button>
+        <button id="btnReset" class="c-button c-button--block">Reset</button>
+    </span>
+</div>
+
+    <script type="text/javascript">
+"use strict";
+(function (window) {
+var document = window.document;
+
+function $(id) { return document.getElementById(id); }
+
+function hue2rgb(p, q, t) {
+    t -= Math.floor(t);
+    if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
+    if (t < 3.0/6.0) return q;
+    if (t < 4.0/6.0) return p + (q - p) * (4.0 / 6.0 - t) * 6.0;
+    return p;
+}
+
+function hsl2rgb(h, s, l) {
+    var r, g, b, p, q;
+
+    if (s == 0.0) {
+        return [255, 255, 255];
+    }
+
+    h -= Math.floor(h);
+
+    q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+    p = 2.0 * l - q;
+    r = hue2rgb(p, q, h + 1.0 / 3.0);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1.0 / 3.0);
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function drawPieChart(context, r, cands) {
+    var x = r, y = r, p1, p2, i, h, o, col, n = cands.length;
+
+    o = Math.random();
+    for (i = 0; i < n; i ++) {
+        p1 = (i + 0) * 2.0 * Math.PI / n;
+        p2 = (i + 1) * 2.0 * Math.PI / n;
+        h = o + i * 1.0 / n;
+        col = hsl2rgb(h, 0.9, 0.62);
+        context.beginPath();
+        context.moveTo(x, y);
+        context.arc(x, y, r, p1, p2, false);
+        context.closePath();
+        context.fillStyle = "rgb(" + col[0] + "," + col[1] + "," + col[2] + ")";
+        context.fill();
+
+        context.save();
+        context.translate(x, y);
+        context.rotate((p1 + p2) / 2);
+        context.font = "bold 2em/1 'Helvetica'";
+        context.textAlign = "center";
+        context.fillStyle = "white";
+        context.fillText(cands[i], r / 2.0, 0);
+        context.restore();
+    }
+}
+
+function draw() {
+    var canvas = $("canvas"),
+        context = canvas.getContext("2d"),
+        inputs, inp, cands = [], checked, i, n;
+
+    inputs = document.getElementsByTagName("input");
+    checked = false;
+    for (i = 0, n = inputs.length; i < n; i ++) {
+        inp = inputs[i];
+        if (inp.type == "checkbox") {
+            checked = inp.checked;
+        } else if (inp.type == "text") {
+            if (checked) {
+                cands[cands.length] = inp.value;
+            }
+        }
+    }
+
+    n = cands.length;
+    while (n) {
+        i = Math.floor(Math.random() * n --);
+        inp = cands[n];
+        cands[n] = cands[i];
+        cands[i] = inp;
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    drawPieChart(context, canvas.width / 2, cands);
+}
+
+function drawArrow() {
+    var canvas = $("arrow"),
+        context = canvas.getContext("2d"),
+        w = canvas.width, h = canvas.height;
+
+    context.beginPath();
+    context.moveTo(w / 2, h);
+    context.lineTo(w / 2 - h, 0);
+    context.lineTo(w / 2 + h, 0);
+    context.closePath();
+    context.fill();
+}
+
+function spinIt() {
+    var angle = Math.floor(3600 + Math.random() * 360.0),
+        sheet = document.styleSheets[1],
+        rule, i, n;
+
+    for (i = 0, n = sheet.cssRules.length; i < n; i ++) {
+        rule = sheet.cssRules[i];
+        if (rule.name != "spin")
+            break;
+        rule.cssRules[1].style.transform = "rotate(" + angle + "deg)";
+    }
+
+    $("canvas").className = "clicked";
+}
+
+function setup() {
+    var tbody = $("tbody"),
+        cands, etr, etd, ei, i, n;
+
+    cands = window.location.search.slice(1).split(",").filter(function (v) { return v.length > 0 }).map(function (v) { return decodeURIComponent(v); });
+
+    if (cands.length < 1) {
+        cands = [ "foo", "bar", "baz" ];
+    }
+
+    for (i = 0, n = cands.length; i < n; i ++) {
+        etr = document.createElement("tr");
+
+        etd = document.createElement("td");
+        etd.className="c-field c-field--choice";
+        ei = document.createElement("input");
+        ei.type = "checkbox";
+        ei.checked = true;
+        etd.appendChild(ei);
+        etr.appendChild(etd);
+
+        etd = document.createElement("td");
+        ei = document.createElement("input");
+        ei.type = "text";
+        ei.value = cands[i];
+        ei.className="c-field";
+        etd.appendChild(ei);
+        etr.appendChild(etd);
+
+        tbody.appendChild(etr);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function (ev) {
+    setup();
+
+    $("btnSpin").addEventListener("click", function (ev) {
+        $("canvas").className = "";
+        setTimeout(spinIt, 100);
+    }, false);
+    $("btnReset").addEventListener("click", function (ev) {
+        $("canvas").className = "";
+    }, false);
+
+    document.addEventListener("change", function (ev) {
+        if (ev.target.tagName == "INPUT") {
+            draw();
+        }
+    }, true);
+
+    drawArrow();
+
+    draw();
+});
+
+})(window);
+    </script>
+</body>
+</html>
